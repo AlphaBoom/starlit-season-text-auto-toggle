@@ -1,0 +1,10 @@
+.cache/
+.backup/
+*.dll
+*.exe
+*.pdb
+*.dmp
+*.zip
+*.log
+*.bin
+.DS_Store
