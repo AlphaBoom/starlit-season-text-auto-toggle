@@ -1,5 +1,8 @@
 -- Starlit Season 1.61 / UE 4.24. All Unreal calls run on the game thread.
 local WAIT=1000000000.0
+-- auto: game's native Xbox/PS4 selection; playstation/xbox: explicit icon skin.
+-- Steam Input can expose a Sony pad as Xbox, so an explicit skin is useful.
+local GAMEPAD_ICONS='auto'
 local automatic=ModRef:GetSharedVariable('TextAutoToggle.Auto')
 if automatic==nil then automatic=true end
 local saved, messages, guides, labels = {}, {}, {}, {}
@@ -72,15 +75,26 @@ local function guide(m)
   labels[id]=label
  end
  if valid(g.ButtonWidget)then
-  if g.ButtonWidget.DefaultKey~=5 then
-   g.ButtonWidget.bAutoSetting=false;g.ButtonWidget:SetKey(5,true)
-  end
-  local info=g.ButtonWidget.ImageSettingDefault.ImalKeySettings:Find(device==0 and 142 or 38):get()
-  local image=g.ButtonWidget.ButtonImage
-  if valid(image)and valid(info.Texture)then
-   local current=image.Brush.ResourceObject
-   if not valid(current)or current:GetAddress()~=info.Texture:GetAddress()then
-    image:SetBrushFromTexture(info.Texture,false);image:SetBrushSize(info.Size)
+  local button=g.ButtonWidget
+  -- TRIANGLE is the game's symbolic top face button. Rebuild its native cache
+  -- so changes to the game's PS4 icon setting take effect without restarting.
+  -- Native SetKey selects ImageSettingDefault / ImageSettingPS4 itself.
+  button.bAutoSetting=false
+  button:SetKey(5,true)
+  button:OnChangeView(device,2,false)
+  -- Native TRIANGLE maps to keyboard R. Our shortcut is A, so only the
+  -- keyboard texture needs an override; never overwrite a native pad icon.
+  local asset,key=nil,nil
+  if device==1 then asset,key=button.ImageSettingDefault,38
+  elseif GAMEPAD_ICONS=='playstation'then asset,key=button.ImageSettingPS4,142
+  elseif GAMEPAD_ICONS=='xbox'then asset,key=button.ImageSettingDefault,142 end
+  if valid(asset)then
+   local map=asset.ImalKeySettings
+   if map:Contains(key)then
+    local info=map:Find(key):get();local image=button.ButtonImage
+    if valid(image)and valid(info.Texture)then
+     image:SetBrushFromTexture(info.Texture,false);image:SetBrushSize(info.Size)
+    end
    end
   end
  end
@@ -96,7 +110,7 @@ local function toggle(source)
 end
 -- One persistent game-thread timer: never enqueue closures from an async/keybind
 -- thread while Lua is running (UE4SS upstream issue #1445).
-print('[TextAutoToggle] Ready: Xbox Y / keyboard A. Single game-thread timer.\n')
+print('[TextAutoToggle] Ready: gamepad Y / Triangle, keyboard A. Native Xbox / PS4 icons. Single game-thread timer.\n')
 LoopInGameThreadWithDelay(20,function()
   local ok,err=pcall(function()
    frame=frame+1
@@ -107,7 +121,7 @@ LoopInGameThreadWithDelay(20,function()
    local down=false
    if valid(pc)then for _,key in ipairs(keys)do if pc:IsInputKeyDown(key)then down=true;break end end end
    local keyboardDown=valid(pc)and pc:IsInputKeyDown(keyboardKey)or false
-   if down and not lastY then device=0;toggle('Xbox Y')end
+   if down and not lastY then device=0;toggle('Gamepad top (Y / Triangle)')end
    if keyboardDown and not lastA and not down then device=1;toggle('Keyboard A')end
    lastY=down
    lastA=keyboardDown

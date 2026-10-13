@@ -123,4 +123,4 @@ Backup-File 'ue4ss\Mods\mods.txt'
 $mods = if (Test-Path -LiteralPath $modsFile) { [IO.File]::ReadAllText($modsFile) } else { '' }
 $mods = [regex]::Replace($mods, '(?m)^\s*TextAutoToggle\s*:.*$', '')
 [IO.File]::WriteAllText($modsFile, ($mods.TrimEnd() + "`r`nTextAutoToggle : 1`r`n"), [Text.UTF8Encoding]::new($false))
-Write-Output 'TextAutoToggle installed. Launch the game through Steam. Xbox Y / keyboard A toggle automatic dialogue.'
+Write-Output 'TextAutoToggle installed. Launch through Steam. Gamepad Y / Triangle or keyboard A toggle automatic dialogue.'

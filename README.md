@@ -2,10 +2,10 @@
 
 《偶像大师 星耀季节》Steam PC 版的对话自动 / 手动切换模组。
 
-- 对话中按 **Xbox 手柄 Y** 或 **键盘 A** 切换。
+- 对话中按手柄上方按键（**Xbox Y / Sony △**）或 **键盘 A** 切换。
 - **AUTO ON**：使用游戏原本的自动推进节奏。
 - **AUTO OFF**：台词显示完后等待；使用原本的确认键继续下一句。
-- 普通对话的原生按键提示栏显示状态，并使用游戏内的 Y / A 图标、字体和间距。
+- 普通对话的原生按键提示栏显示状态，并使用游戏内的 Y / △ / A 图标、字体和间距。
 - 长按按键只切换一次。模式在当前游戏会话内保留，重新启动默认开启自动。
 
 ## 效果展示
@@ -20,6 +20,10 @@
 
 ![实际游戏中的手柄 Y 图标与 AUTO OFF 状态](docs/images/gamepad-auto-off.jpg)
 
+Sony 图标模式 · **△ AUTO ON**（在同一台 PC 上强制 PS4 图标进行显示验证，未连接 Sony 手柄）：
+
+![真实游戏中的 Sony 三角图标显示验证](docs/images/playstation-triangle.jpg)
+
 ## 兼容范围
 
 已在 **Steam v1.61 / Unreal Engine 4.24 / Windows x64** 的普通对话页面验证。
@@ -29,6 +33,11 @@
 依赖 [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS)，固定使用
 `3.0.1-1170-g9e7fed53`。本仓库只包含模组源码和兼容签名；加载器从官方发布下载并校验哈希。
 普通对话提示栏已经验证，小说 / 电影式对话的提示栏尚未验证。
+
+Sony 手柄共用游戏的 `Gamepad_FaceButton_Top` 上方按键输入；模组跟随游戏原生 Xbox / PS4 图标选择。
+尚无 DualShock / DualSense 真机验证。通过 Steam Input 或其他映射工具被识别为 Xbox 时，游戏可能仍选择 Xbox 图标。
+如需强制显示 Sony △，把 `main.lua` 顶部的 `GAMEPAD_ICONS='auto'` 改为 `GAMEPAD_ICONS='playstation'`，
+关闭游戏后重新安装并启动。可选值为 `auto`、`playstation`、`xbox`；该设置只改变显示图标。
 
 ## 安装或更新
 

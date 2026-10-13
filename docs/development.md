@@ -37,11 +37,19 @@
 使用 `KeyType = 0` 区分模组条目，关闭输入管理器绑定与点击命中。
 行的 CanvasSlot 自动计算宽度并向左展开，保留右侧对齐。
 
-按钮先使用原生 TRIANGLE/Y 布局，然后从 `ImageSettingDefault.ImalKeySettings` 取实际纹理：
-键盘 A 的 raw EImalKey 为 38，手柄 Y 为 142。
-不能只用 TRIANGLE 映射键盘；游戏会将它画成 R。
+按钮使用原生 TRIANGLE（上方按键）布局，每次刷新调用 `SetKey(5, true)` 重建原生图标缓存，
+再通过 `OnChangeView(device, 2, false)` 显示对应设备。
+游戏本身选择 `ImageSettingDefault` / `ImageSettingPS4`，因此默认模式不会强制覆盖手柄纹理。
+键盘单独从 `ImageSettingDefault.ImalKeySettings` 取 raw EImalKey 38 的 A 纹理；
+不能只用 TRIANGLE 映射键盘，因为游戏会将它画成 R。
+可选 `GAMEPAD_ICONS = 'playstation' / 'xbox'` 从对应原生资产读取 raw EImalKey 142 的上方按键纹理，
+用于 Steam Input 把 Sony 手柄映射成 Xbox 的情况；默认 `auto` 保留游戏选择。
 没有复制或重新绘制游戏图标。提示采用 ASCII `AUTO ON / AUTO OFF`，避免原生日文字体的缺字。
-图标依据最近用于切换的 Y / A 显示。
+图标依据最近用于切换的手柄上方按键 / 键盘 A 显示。
+
+Sony △ 与 Xbox Y 使用相同的 `Gamepad_FaceButton_Top` 输入路径，DirectInput 插件还暴露
+`XIGamePad_Button_Y`。没有新增猜测的 Sony 专用键名，也不使用后台按键回调。
+DualShock / DualSense 的 USB、蓝牙和 Steam Input 真机组合尚未验证。
 
 ## 2026-10-13 复测
 
@@ -53,6 +61,16 @@
 - 随后多个对话控件 / 场景继续生成原生提示条，游戏未再次退出。
 - 安装、停用脚本通过 PowerShell 语法检查；安装兼容性检查在真实游戏目录通过。
 - 在独立临时目录实跑首次安装、重复更新、停用，验证固定 ZIP 校验、源码复制、其他模组条目和用户自定义配置保留。
+
+## Sony 图标补充验证（2026-10-13）
+
+- 取消默认模式强制读取 Xbox 142 纹理的做法；游戏原生控件负责选择 Xbox / PS4 图标。
+- 从已加载游戏代码确认原生按钮选择 `ImageSettingPS4` 的分支，不增加后台输入回调。
+- 临时验证代码在同一个游戏线程定时器中依次切换 `playstation`、`xbox`、`auto` 显示模式，然后恢复 `auto`。
+- 实际游戏读取 PS4 纹理 `WT_ps4_button003`，截图确认绿色 △；玩家也反馈“有看到三角”。
+- 同次运行记录到手柄上方按键成功切换 MANUAL / AUTO。
+- 临时图标轮换代码未进入仓库，已用最终源码替换安装文件。
+- Sony 控制器硬件、USB / 蓝牙及其 Steam Input 映射组合尚未实测；截图仅证明图标渲染。
 
 上述是一次有限的实际回归测试，不代表覆盖所有对话场景、其他模组组合或游戏版本。
 崩溃转储、个人日志、游戏 EXE、存档和资源均不上传到仓库。
