@@ -74,3 +74,34 @@ DualShock / DualSense 的 USB、蓝牙和 Steam Input 真机组合尚未验证�
 
 上述是一次有限的实际回归测试，不代表覆盖所有对话场景、其他模组组合或游戏版本。
 崩溃转储、个人日志、游戏 EXE、存档和资源均不上传到仓库。
+
+## 安装与维护
+
+运行时固定为 UE4SS `3.0.1-1170-g9e7fed53`，版本和校验和记录在 `runtime.json`。
+安装脚本核对游戏 EXE、已有加载器和下载 ZIP 的 SHA-256。遇到不支持的游戏版本或不同加载器会停止。
+如提示加载器冲突，先确认其他模组使用的 UE4SS 版本，不要直接覆盖其 DLL。
+脚本不会改写游戏 EXE、PAK 或存档，并保留 `mods.txt` 中的其他模组条目。
+
+首次覆盖的模组、签名和配置文件备份在游戏目录下的
+`StarlitSeason\Binaries\Win64\.TextAutoToggleBackup`。
+安装会关闭加载器的自动重载、热重载和调试窗口，设置游戏线程执行及关闭 UObject 数组缓存。
+这些是共用加载器设置；原配置可在备份中查看。
+
+如果固定版本无法下载，可将保存的同版本 ZIP 放到仓库的
+`.cache/UE4SS_3.0.1-1170-g9e7fed53.zip` 后重新运行安装。
+官方 `experimental-latest` 可能移除旧文件，不要用其他版本 ZIP 替代，脚本会拒绝校验和不符的文件。
+
+如果 Sony 手柄经过 Steam Input 后显示 Xbox 图标，可在
+`mod/ue4ss/Mods/TextAutoToggle/Scripts/main.lua` 顶部将 `GAMEPAD_ICONS='auto'` 改为
+`GAMEPAD_ICONS='playstation'`，关闭游戏后重新安装。`xbox` 可强制使用 Xbox 图标。
+这只改变图标，不改变按键映射。
+
+停用脚本保留共用加载器及模组源码。若要彻底删除本模组，先停用，再删除
+`StarlitSeason\Binaries\Win64\ue4ss\Mods\TextAutoToggle`。
+`UE4SS_Signatures` 的四个兼容签名可能被其他星耀季节模组使用，删除前检查其他模组需求。
+如果加载器仅为本模组安装且没有其他模组依赖它，可关闭游戏后删除新增的
+`StarlitSeason\Binaries\Win64\dwmapi.dll` 和 `ue4ss` 目录。
+保留游戏原有的 EXE 和 `XAudio2_9redist.dll`。
+
+开发时修改仓库内源码，关闭游戏后重新执行安装脚本，再从 Steam 启动。
+日志位于游戏目录的 `StarlitSeason\Binaries\Win64\ue4ss\UE4SS.log`，查找 `[TextAutoToggle]`。

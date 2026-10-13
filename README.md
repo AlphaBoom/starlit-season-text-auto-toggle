@@ -1,99 +1,71 @@
-# Starlit Season Text Auto Toggle
+# 星耀季节：对话自动切换
 
-《偶像大师 星耀季节》Steam PC 版的对话自动 / 手动切换模组。
+在对话中一键切换自动播放和手动阅读，状态直接显示在游戏原有的按键提示栏里。
 
-- 对话中按手柄上方按键（**Xbox Y / Sony △**）或 **键盘 A** 切换。
-- **AUTO ON**：使用游戏原本的自动推进节奏。
-- **AUTO OFF**：台词显示完后等待；使用原本的确认键继续下一句。
-- 普通对话的原生按键提示栏显示状态，并使用游戏内的 Y / △ / A 图标、字体和间距。
-- 长按按键只切换一次。模式在当前游戏会话内保留，重新启动默认开启自动。
+适用于 **Windows / Steam 版 v1.61**。
 
-## 效果展示
+## 安装
 
-以下为实际游戏截图，状态项直接融入原有按键提示栏。
-
-手柄 Y · **AUTO ON**（自动推进）：
-
-![实际游戏中的手柄 Y 图标与 AUTO ON 状态](docs/images/gamepad-auto-on.jpg)
-
-手柄 Y · **AUTO OFF**（等待确认键继续）：
-
-![实际游戏中的手柄 Y 图标与 AUTO OFF 状态](docs/images/gamepad-auto-off.jpg)
-
-Sony 图标模式 · **△ AUTO ON**（在同一台 PC 上强制 PS4 图标进行显示验证，未连接 Sony 手柄）：
-
-![真实游戏中的 Sony 三角图标显示验证](docs/images/playstation-triangle.jpg)
-
-## 兼容范围
-
-已在 **Steam v1.61 / Unreal Engine 4.24 / Windows x64** 的普通对话页面验证。
-安装脚本会核对游戏 EXE 的 SHA-256；其他版本需要重新确认字段偏移和签名。
-模组不会改写游戏 EXE、PAK 或存档。
-
-依赖 [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS)，固定使用
-`3.0.1-1170-g9e7fed53`。本仓库只包含模组源码和兼容签名；加载器从官方发布下载并校验哈希。
-普通对话提示栏已经验证，小说 / 电影式对话的提示栏尚未验证。
-
-Sony 手柄共用游戏的 `Gamepad_FaceButton_Top` 上方按键输入；模组跟随游戏原生 Xbox / PS4 图标选择。
-尚无 DualShock / DualSense 真机验证。通过 Steam Input 或其他映射工具被识别为 Xbox 时，游戏可能仍选择 Xbox 图标。
-如需强制显示 Sony △，把 `main.lua` 顶部的 `GAMEPAD_ICONS='auto'` 改为 `GAMEPAD_ICONS='playstation'`，
-关闭游戏后重新安装并启动。可选值为 `auto`、`playstation`、`xbox`；该设置只改变显示图标。
-
-## 安装或更新
-
-1. 关闭游戏，下载或克隆本仓库。
-2. 在 PowerShell 中执行，路径替换为自己的 Steam 游戏目录：
+1. **关闭游戏**，点击本页 **Code → Download ZIP**，下载并解压。
+2. 打开解压后含有 `README.md` 和 `scripts` 的文件夹，在文件夹地址栏输入 `powershell`，按回车。
+3. 粘贴下面这条命令并回车，把引号里的路径换成你的游戏目录：
 
    ```powershell
-   .\scripts\Install.ps1 -GameDirectory 'D:\Program Files (x86)\Steam\steamapps\common\StarlitSeason'
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Install.ps1 -GameDirectory 'D:\Program Files (x86)\Steam\steamapps\common\StarlitSeason'
    ```
 
-3. 从 Steam 正常启动游戏，进入对话后使用 Y / A。
+   找不到游戏目录？在 Steam 中右键游戏 → **管理 → 浏览本地文件**，复制打开的文件夹路径。
 
-只检查兼容性，不修改文件：
+4. 等待安装完成，再从 **Steam** 启动游戏。所需文件会自动下载，无需另外安装加载器。
+
+更新时，下载新版并重复以上步骤即可。
+
+## 怎么用
+
+进入对话后，按以下任意一个键切换：
+
+| 使用设备 | 切换按键 |
+| --- | --- |
+| Xbox 手柄 | **Y** |
+| Sony 手柄 | **△** |
+| 键盘 | **A** |
+
+- **AUTO ON**：台词自动推进。
+- **AUTO OFF**：台词显示完后停住，按游戏原本的确认键继续。
+
+每次启动默认开启自动。Sony 图标已验证显示，Sony 手柄真机仍未测试。
+
+## 效果
+
+手动阅读时，原生提示栏显示 **Y AUTO OFF**：
+
+![游戏内的手动阅读状态](docs/images/gamepad-auto-off.jpg)
+
+<details>
+<summary>查看自动模式和 Sony 图标</summary>
+
+自动模式：
+
+![游戏内的自动播放状态](docs/images/gamepad-auto-on.jpg)
+
+Sony △ 图标（显示验证截图，未连接 Sony 手柄）：
+
+![游戏内的 Sony 三角图标](docs/images/playstation-triangle.jpg)
+
+</details>
+
+## 停用
+
+关闭游戏，在解压后的文件夹中打开 PowerShell，运行下面的命令，同样替换游戏目录：
 
 ```powershell
-.\scripts\Install.ps1 -GameDirectory 'D:\Program Files (x86)\Steam\steamapps\common\StarlitSeason' -CheckOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Disable.ps1 -GameDirectory 'D:\Program Files (x86)\Steam\steamapps\common\StarlitSeason'
 ```
 
-安装脚本保留其他模组在 `mods.txt` 中的条目；遇到不同版本的 UE4SS 或不同的
-`dwmapi.dll` 会停止，避免覆盖已有加载器。安装时覆盖的模组、签名和配置文件，首次原件备份到
-`StarlitSeason\Binaries\Win64\.TextAutoToggleBackup`。
+下次启动游戏即可恢复原本的对话行为。
 
-为了避开当前 UE4SS 的 Lua 并发和重载问题，安装脚本会关闭整个加载器的自动重载、热重载和调试窗口，
-设置游戏线程定时器及关闭 UObject 数组缓存。原配置保留在备份目录。修改代码后应完整重启游戏。
+安装报错、手柄图标设置及技术说明见 [详细说明](docs/development.md#安装与维护)。
 
-官方 `experimental-latest` 发布的旧文件可能会被替换或移除。如果固定版本无法下载，请使用保存的同版本 ZIP
-放到仓库的 `.cache/UE4SS_3.0.1-1170-g9e7fed53.zip`。不要用新版本 ZIP 冒充旧版本；脚本会拒绝哈希不符的文件。
+---
 
-## 停用与卸载
-
-关闭游戏后运行：
-
-```powershell
-.\scripts\Disable.ps1 -GameDirectory 'D:\Program Files (x86)\Steam\steamapps\common\StarlitSeason'
-```
-
-它把 `TextAutoToggle` 设为停用，并保留共用的 UE4SS 加载器与其他模组。
-下次启动会恢复游戏原本的对话行为。
-
-如需删除本模组文件，停用后删除 `ue4ss\Mods\TextAutoToggle`。
-四个 `ue4ss\UE4SS_Signatures\*.lua` 兼容签名也可能被其他星耀季节模组使用；删除前先检查备份及其他模组需求。
-如果 UE4SS 仅为本模组安装，且没有其他模组依赖它，可关闭游戏后删除新增的 `dwmapi.dll` 和 `ue4ss` 目录。
-这些路径均相对于 `StarlitSeason\Binaries\Win64`。保留游戏原有的 EXE 和 `XAudio2_9redist.dll`。
-
-## 后续开发
-
-- 主要实现：`mod/ue4ss/Mods/TextAutoToggle/Scripts/main.lua`
-- 游戏兼容签名：`mod/ue4ss/UE4SS_Signatures/`
-- 运行时版本与校验和：`runtime.json`
-- 实现说明及复测记录：[docs/development.md](docs/development.md)
-
-编辑仓库内源码，关闭游戏后重新执行安装脚本，再从 Steam 启动。
-日志位于 `StarlitSeason\Binaries\Win64\ue4ss\UE4SS.log`，查找 `[TextAutoToggle]`。
-
-## 致谢与许可
-
-本模组源码采用 MIT 许可。UE4SS 由其上游维护，遵循上游许可；下载的加载器包含其 LICENSE。
-图标、字体和控件在运行时直接使用游戏资源，本仓库不分发独立游戏资源文件。
-效果截图中的游戏画面版权归游戏权利人所有。
+模组采用 [MIT 许可](LICENSE)，使用 [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS) 加载。截图中的游戏画面版权归游戏权利人所有。
