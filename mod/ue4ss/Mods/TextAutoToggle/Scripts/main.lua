@@ -9,6 +9,7 @@ local saved, messages, guides, labels = {}, {}, {}, {}
 local pc, lastY, lastA, frame = nil, false, false, 0
 local device=ModRef:GetSharedVariable('TextAutoToggle.Device')or 0
 local lastError=nil
+local ownButtons,deviceChanged={},false
 local function valid(o)return o and o:IsValid()end
 for _,p in ipairs({{'TextAutoWait',PropertyTypes.FloatProperty,0x288},{'TextAutoTyping',PropertyTypes.ByteProperty,0x270},{'TextAutoWaiting',PropertyTypes.ByteProperty,0x298}}) do
  RegisterCustomProperty({Name=p[1],Type=p[2],BelongsToClass='/Script/imal.CommuScriptMessage',OffsetInternal=p[3]})
@@ -76,6 +77,7 @@ local function guide(m)
  end
  if valid(g.ButtonWidget)then
   local button=g.ButtonWidget
+  ownButtons[button:GetAddress()]=true
   -- TRIANGLE is the game's symbolic top face button. Rebuild its native cache
   -- so changes to the game's PS4 icon setting take effect without restarting.
   -- Native SetKey selects ImageSettingDefault / ImageSettingPS4 itself.
@@ -99,6 +101,16 @@ local function guide(m)
   end
  end
 end
+-- Follow the device the game's own guide icons show (keyboard / pad), not only
+-- the device last used for our toggle. Native buttons switch through OnChangeView.
+RegisterHook('/Script/imal.WidgetKeyButtonBase:OnChangeView',function(self,deviceType)
+ local b=self:get()
+ if ownButtons[b:GetAddress()]then return end
+ local d=deviceType:get()
+ if(d==0 or d==1)and d~=device then
+  device=d;ModRef:SetSharedVariable('TextAutoToggle.Device',device);deviceChanged=true
+ end
+end)
 local function refreshUI()for _,m in ipairs(messages)do if valid(m)then guide(m)end end end
 local function toggle(source)
  if not active()then return end
@@ -126,7 +138,7 @@ LoopInGameThreadWithDelay(20,function()
    lastY=down
    lastA=keyboardDown
    applyWait()
-   if frame%10==1 then refreshUI()end
+   if deviceChanged or frame%10==1 then deviceChanged=false;refreshUI()end
   end)
   if not ok and err~=lastError then lastError=err;print('[TextAutoToggle] '..tostring(err)..'\n')end
 end)

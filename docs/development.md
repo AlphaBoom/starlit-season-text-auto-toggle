@@ -89,7 +89,7 @@ DualShock / DualSense 的 USB、蓝牙和 Steam Input 真机组合尚未验证�
 
 如果固定版本无法下载，可将保存的同版本 ZIP 放到仓库的
 `.cache/UE4SS_3.0.1-1170-g9e7fed53.zip` 后重新运行安装。
-官方 `experimental-latest` 可能移除旧文件，不要用其他版本 ZIP 替代，脚本会拒绝校验和不符的文件。
+上游 `experimental-latest` 已移除该文件，固定版本 ZIP 镜像在 [starlit-season-mods](https://github.com/AlphaBoom/starlit-season-mods/releases/tag/deps-ue4ss-3.0.1-1170)。不要用其他版本 ZIP 替代，脚本会拒绝校验和不符的文件。
 
 如果 Sony 手柄经过 Steam Input 后显示 Xbox 图标，可在
 `mod/ue4ss/Mods/TextAutoToggle/Scripts/main.lua` 顶部将 `GAMEPAD_ICONS='auto'` 改为
