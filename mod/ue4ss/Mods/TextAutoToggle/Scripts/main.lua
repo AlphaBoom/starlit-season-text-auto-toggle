@@ -14,9 +14,17 @@ local function valid(o)return o and o:IsValid()end
 for _,p in ipairs({{'TextAutoWait',PropertyTypes.FloatProperty,0x288},{'TextAutoTyping',PropertyTypes.ByteProperty,0x270},{'TextAutoWaiting',PropertyTypes.ByteProperty,0x298}}) do
  RegisterCustomProperty({Name=p[1],Type=p[2],BelongsToClass='/Script/imal.CommuScriptMessage',OffsetInternal=p[3]})
 end
-local textlib=StaticFindObject('/Script/Engine.KismetTextLibrary'):GetCDO()
-local gameplay=StaticFindObject('/Script/Engine.GameplayStatics'):GetCDO()
-local widgets=StaticFindObject('/Script/UMG.WidgetBlueprintLibrary'):GetCDO()
+-- Class default objects are looked up on use: mods can start before the engine has
+-- loaded UMG, and an early lookup then stays empty for the whole session.
+local cdoCache={}
+local function cdo(path)
+ local o=cdoCache[path]
+ if o and o:IsValid()then return o end
+ local c=StaticFindObject(path)
+ o=c and c:IsValid()and c:GetCDO()or nil
+ cdoCache[path]=o
+ return o
+end
 local keys={{KeyName=FName('Gamepad_FaceButton_Top')},{KeyName=FName('XIGamePad_Button_Y')}}
 local keyboardKey={KeyName=FName('A')}
 local function active()
@@ -53,10 +61,11 @@ local function guide(m)
   end
   if not valid(g)then
    local ref=row:GetChildAt(0)
-   g=widgets:Create(w:GetWorld(),ref:GetClass(),pc)
+   if not cdo('/Script/UMG.WidgetBlueprintLibrary')or not cdo('/Script/Engine.KismetTextLibrary')or not valid(ref)then return end
+   g=cdo('/Script/UMG.WidgetBlueprintLibrary'):Create(w:GetWorld(),ref:GetClass(),pc)
    g.bBindInputManager=false;g.KeyType=0;g.DispConfigType=2
    for _,name in ipairs({'KeyButtonScale','KeyButtonPadding','TextPadding','TextColorAndOpacity','Font','ShadowOffset','ShadowColorAndOpacity'})do g[name]=ref[name]end
-   g.DisplayText=textlib:Conv_StringToText('AUTO OFF')
+   g.DisplayText=cdo('/Script/Engine.KismetTextLibrary'):Conv_StringToText('AUTO OFF')
    row:AddChildToHorizontalBox(g)
    g:SetUp()
    local slot=row.Slot
@@ -71,7 +80,7 @@ local function guide(m)
  end
  local label=automatic and 'AUTO ON' or 'AUTO OFF'
  if labels[id]~=label then
-  g.DisplayText=textlib:Conv_StringToText(label)
+  g.DisplayText=cdo('/Script/Engine.KismetTextLibrary'):Conv_StringToText(label)
   if valid(g.TextWidget)then g.TextWidget:SetText(g.DisplayText)end
   labels[id]=label
  end
@@ -128,7 +137,7 @@ LoopInGameThreadWithDelay(20,function()
    frame=frame+1
    if frame%25==1 then
     messages=FindAllOf('CommuScriptMessage')or{}
-    for _,m in ipairs(messages)do if valid(m) and valid(m:GetWorld())then pc=gameplay:GetPlayerController(m:GetWorld(),0);break end end
+    for _,m in ipairs(messages)do if valid(m) and valid(m:GetWorld())then pc=cdo('/Script/Engine.GameplayStatics'):GetPlayerController(m:GetWorld(),0);break end end
    end
    local down=false
    if valid(pc)then for _,key in ipairs(keys)do if pc:IsInputKeyDown(key)then down=true;break end end end
