@@ -6,14 +6,19 @@ local GAMEPAD_ICONS='auto'
 local automatic=ModRef:GetSharedVariable('TextAutoToggle.Auto')
 if automatic==nil then automatic=true end
 local saved, messages, guides, labels = {}, {}, {}, {}
+local released={}
 local pc, lastY, lastA, frame = nil, false, false, 0
 local device=ModRef:GetSharedVariable('TextAutoToggle.Device')or 0
 local lastError=nil
 local ownButtons,deviceChanged={},false
 local function valid(o)return o and o:IsValid()end
-for _,p in ipairs({{'TextAutoWait',PropertyTypes.FloatProperty,0x288},{'TextAutoTyping',PropertyTypes.ByteProperty,0x270},{'TextAutoWaiting',PropertyTypes.ByteProperty,0x298}}) do
+for _,p in ipairs({{'TextAutoWait',PropertyTypes.FloatProperty,0x288},{'TextAutoElapsed',PropertyTypes.FloatProperty,0x294},{'TextAutoTyping',PropertyTypes.ByteProperty,0x270},{'TextAutoWaiting',PropertyTypes.ByteProperty,0x298},{'TextAutoTimedOnly',PropertyTypes.ByteProperty,0x2a4}}) do
  RegisterCustomProperty({Name=p[1],Type=p[2],BelongsToClass='/Script/imal.CommuScriptMessage',OffsetInternal=p[3]})
 end
+RegisterCustomProperty({Name='TextAutoSelectActive',Type=PropertyTypes.ByteProperty,BelongsToClass='/Script/imal.CommuScriptSelect',OffsetInternal=0x230})
+RegisterCustomProperty({Name='TextAutoInputMode',Type=PropertyTypes.IntProperty,BelongsToClass='/Script/imal.CommuScriptInput',OffsetInternal=0x250})
+RegisterCustomProperty({Name='TextAutoPaused',Type=PropertyTypes.ByteProperty,BelongsToClass='/Script/imal.CommuScriptPause',OffsetInternal=0x230})
+RegisterCustomProperty({Name='TextAutoCommand',Type=PropertyTypes.IntProperty,BelongsToClass='/Script/imal.CommuScriptParser',OffsetInternal=0x61c})
 -- Class default objects are looked up on use: mods can start before the engine has
 -- loaded UMG, and an early lookup then stays empty for the whole session.
 local cdoCache={}
@@ -33,16 +38,67 @@ local function active()
  end
  return false
 end
+local function restoreWait(m)
+ local id=m:GetAddress();local shared='TextAutoToggle.Wait.'..tostring(id)
+ local original=saved[id]
+ if original==nil then original=ModRef:GetSharedVariable(shared)end
+ if m.TextAutoWait==WAIT and original~=nil then m.TextAutoWait=original end
+ saved[id]=nil;ModRef:SetSharedVariable(shared,nil)
+end
+local function shouldHold(m)
+ local id=m:GetAddress()
+ if released[id]then
+  -- A timed-only caption ignores native confirm (+0x2a4). Leave its real
+  -- threshold in place until a later native tick has completed this caption.
+  local parser=m._SaveParser
+  if valid(parser)and parser.TextAutoCommand==released[id]and m.TextAutoTyping==0 and m.TextAutoWaiting~=0 then return false end
+  released[id]=nil
+ end
+ if not valid(m:GetWorld())or(m.TextAutoTyping==0 and m.TextAutoWaiting==0)then return false end
+ if not(valid(m._WidgetMessage)or valid(m._WidgetNovel)or valid(m._WidgetCinema))then return false end
+ local parser=m._SaveParser
+ if valid(parser)then
+  local select=parser.CommuScriptSelect
+  if valid(select)and select.TextAutoSelectActive~=0 then return false end
+ end
+ return true
+end
 local function applyWait()
  for _,m in ipairs(messages)do if valid(m)then
   local id=m:GetAddress();local wait=m.TextAutoWait
   local shared='TextAutoToggle.Wait.'..tostring(id)
   if saved[id]==nil then saved[id]=ModRef:GetSharedVariable(shared)end
-  if not automatic then
+  if not automatic and shouldHold(m)then
    if wait~=WAIT then saved[id]=wait;ModRef:SetSharedVariable(shared,wait);m.TextAutoWait=WAIT end
-  elseif wait==WAIT and saved[id]~=nil then m.TextAutoWait=saved[id];saved[id]=nil;ModRef:SetSharedVariable(shared,nil)end
+  else if automatic then released[id]=nil end;restoreWait(m)end
  end end
 end
+-- Native confirmation copies Wait into Elapsed and runs the next script command
+-- synchronously. Never let our sentinel enter that command/choice transition.
+-- Restoring only the threshold leaves typing, voice stopping and selection to
+-- the game's original confirmation handler. Reapply after it has changed state.
+local function beforeNativeInput(self,action)
+ if automatic then return end
+ -- In v1.61 OnPressed_Commu's switch maps action 22 to the next-message
+ -- delegate. Other actions (pause, log, skip, etc.) must not release a line.
+ if action:get()~=22 then return end
+ local input=self:get();local parser=input._SaveParser
+ if not valid(parser)then return end
+ local m=parser.CommuScriptMessage
+ if not valid(m)then return end
+ restoreWait(m)
+ local pause=parser.CommuScriptPause
+ if input.TextAutoInputMode==1 and(not valid(pause)or pause.TextAutoPaused==0)
+  and m.TextAutoTimedOnly~=0 and m.TextAutoTyping==0 and m.TextAutoWaiting~=0 then
+  released[m:GetAddress()]=parser.TextAutoCommand
+  -- Do not clear the native input lock or call a voice/selection function.
+  -- Satisfy only the current caption's timer; native UpdateWait still waits
+  -- for its voice and performs the normal command/choice handoff next tick.
+  m.TextAutoElapsed=m.TextAutoWait
+  print('[TextAutoToggle] Released timed-only caption for native next tick\n')
+ end
+end
+RegisterHook('/Script/imal.CommuScriptInput:OnPressed_Commu',beforeNativeInput,function()applyWait()end)
 local function guide(m)
  local w=m._WidgetMessage
  if not valid(w)then return end
@@ -131,7 +187,7 @@ local function toggle(source)
 end
 -- One persistent game-thread timer: never enqueue closures from an async/keybind
 -- thread while Lua is running (UE4SS upstream issue #1445).
-print('[TextAutoToggle] Ready: gamepad Y / Triangle, keyboard A. Native Xbox / PS4 icons. Single game-thread timer.\n')
+print('[TextAutoToggle] Ready v3: manual confirm supports timed-only captions before choices.\n')
 LoopInGameThreadWithDelay(20,function()
   local ok,err=pcall(function()
    frame=frame+1
